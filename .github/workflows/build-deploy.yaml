@@ -1,0 +1,52 @@
+name: Build and Deploy WAR to Tomcat
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build WAR
+        run: gradle clean war
+
+      - name: Check build output
+        run: ls -lh build/libs
+
+      - name: Copy WAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "build/libs/*.war"
+          target: "/opt/apache-tomcat-9.0.85/webapps/"
+
+      - name: Restart Tomcat
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo chown -R ec2-user:ec2-user /opt/apache-tomcat-9.0.85
+            cd /opt/apache-tomcat-9.0.85/bin
+            ./shutdown.sh || true
+            sleep 5
+            ./startup.sh
+            echo "Deployment complete"
