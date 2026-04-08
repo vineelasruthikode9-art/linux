@@ -1,72 +1,25 @@
-name: Build and Deploy WAR to Tomcat
+- name: Deploy WAR and Restart Tomcat
+  uses: appleboy/ssh-action@v1.0.0
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ec2-user
+    key: ${{ secrets.EC2_KEY }}
+    script: |
+      echo "Cleaning old deployment..."
+      sudo rm -rf /opt/apache-tomcat-9.0.85/webapps/myapp
+      sudo rm -f /opt/apache-tomcat-9.0.85/webapps/myapp.war
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+      echo "Copying WAR from /tmp/build/libs to Tomcat webapps..."
+      sudo cp /tmp/build/libs/*.war /opt/apache-tomcat-9.0.85/webapps/myapp.war
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+      echo "Restarting Tomcat..."
+      cd /opt/apache-tomcat-9.0.85/bin
+      ./shutdown.sh || true
+      sleep 5
+      ./startup.sh
 
-    steps:
-      #Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v4
+      echo "Waiting for deployment..."
+      sleep 10
 
-      #Setup Java
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      #Install Gradle
-      - name: Install Gradle
-        run: |
-          sudo apt update
-          sudo apt install -y gradle
-
-      #Build WAR
-      - name: Build WAR
-        run: gradle clean war
-
-      #DEBUG (VERY IMPORTANT)
-      - name: Debug WAR file
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "All files:"
-          ls -R
-          echo "Checking WAR output:"
-          ls -lh build/libs || echo "WAR NOT FOUND"
-
-      #Copy WAR to EC2
-      - name: Copy WAR to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          source: "build/libs/*.war"
-          target: "/tmp/"
-          debug: true
-
-      #Deploy to Tomcat
-      - name: Deploy WAR and Restart Tomcat
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "Copying WAR to Tomcat..."
-            sudo cp /tmp/*.war /opt/apache-tomcat-9.0.85/webapps/
-
-            echo "Restarting Tomcat..."
-            cd /opt/apache-tomcat-9.0.85/bin
-            ./shutdown.sh || true
-            sleep 5
-            ./startup.sh
-
-            echo "Deployment completed ✅"
+      echo "Deployment completed ✅"
+      ls -lh /opt/apache-tomcat-9.0.85/webapps
