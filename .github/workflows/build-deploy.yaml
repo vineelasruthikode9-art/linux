@@ -19,31 +19,34 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Install Gradle
+        run: |
+          sudo apt update
+          sudo apt install -y gradle
 
       - name: Build WAR
         run: gradle clean war
 
-      - name: Check build output
+      - name: Check WAR output
         run: ls -lh build/libs
 
       - name: Copy WAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           source: "build/libs/*.war"
-          target: "/opt/apache-tomcat-9.0.85/webapps/"
+          target: "/tmp/"
 
-      - name: Restart Tomcat
+      - name: Deploy WAR and Restart Tomcat
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
+            sudo cp /tmp/*.war /opt/apache-tomcat-9.0.85/webapps/
             sudo chown -R ec2-user:ec2-user /opt/apache-tomcat-9.0.85
             cd /opt/apache-tomcat-9.0.85/bin
             ./shutdown.sh || true
