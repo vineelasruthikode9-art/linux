@@ -3,26 +3,34 @@ name: Install Tomcat on EC2
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH into EC2 and install Tomcat
+      - name: Install Tomcat via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
+            echo "Connected to EC2"
+
             sudo yum update -y
             sudo yum install -y java-11-amazon-corretto
 
             cd /opt
-            sudo wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
+
+            # FIXED URL (archive - always works)
+            sudo wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
+
             sudo tar -xvzf apache-tomcat-9.0.85.tar.gz
 
             cd apache-tomcat-9.0.85/bin
             sudo chmod +x *.sh
             ./startup.sh
+
+            echo "Tomcat Started"
