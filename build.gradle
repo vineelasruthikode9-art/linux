@@ -11,8 +11,11 @@ repositories {
 }
 
 dependencies {
-    // Servlet API (provided by Tomcat)
-    providedCompile 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+}
+
+war {
+    archiveFileName = 'myapp.war'
 }
 
 tasks.withType(JavaCompile) {
