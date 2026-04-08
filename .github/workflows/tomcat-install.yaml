@@ -13,14 +13,16 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
-            sudo apt update
-            sudo apt install -y openjdk-11-jdk
+            sudo yum update -y
+            sudo yum install -y java-11-amazon-corretto
+
             cd /opt
-            wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
-            tar -xvzf apache-tomcat-9.0.85.tar.gz
+            sudo wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
+            sudo tar -xvzf apache-tomcat-9.0.85.tar.gz
+
             cd apache-tomcat-9.0.85/bin
-            chmod +x *.sh
+            sudo chmod +x *.sh
             ./startup.sh
