@@ -1,13 +1,17 @@
 package com.example;
 
 import java.io.IOException;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class HelloServlet extends HttpServlet {
-    protected void doGet(HttpServletRequest req, HttpServletResponse res)
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        res.getWriter().println("Hello from Tomcat 🚀");
+        response.setContentType("text/plain");
+        response.getWriter().println("Hello from Tomcat 🚀");
     }
 }
