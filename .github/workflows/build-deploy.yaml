@@ -10,26 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      #Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      #Setup Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      #Install Gradle
       - name: Install Gradle
         run: |
           sudo apt update
           sudo apt install -y gradle
 
+      #Build WAR
       - name: Build WAR
         run: gradle clean war
 
-      - name: Check WAR output
-        run: ls -lh build/libs
+      #DEBUG (VERY IMPORTANT)
+      - name: Debug WAR file
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "All files:"
+          ls -R
+          echo "Checking WAR output:"
+          ls -lh build/libs || echo "WAR NOT FOUND"
 
+      #Copy WAR to EC2
       - name: Copy WAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -38,7 +50,9 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: "build/libs/*.war"
           target: "/tmp/"
+          debug: true
 
+      #Deploy to Tomcat
       - name: Deploy WAR and Restart Tomcat
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -46,10 +60,13 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
+            echo "Copying WAR to Tomcat..."
             sudo cp /tmp/*.war /opt/apache-tomcat-9.0.85/webapps/
-            sudo chown -R ec2-user:ec2-user /opt/apache-tomcat-9.0.85
+
+            echo "Restarting Tomcat..."
             cd /opt/apache-tomcat-9.0.85/bin
             ./shutdown.sh || true
             sleep 5
             ./startup.sh
-            echo "Deployment complete"
+
+            echo "Deployment completed ✅"
