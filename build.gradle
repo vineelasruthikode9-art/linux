@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'war'
+}
+
+group = 'com.example'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Servlet API (provided by Tomcat)
+    providedCompile 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
