@@ -15,7 +15,7 @@ dependencies {
 }
 
 war {
-    archiveFileName = 'myapp.war'
+    archiveName = 'myapp.war'
 }
 
 tasks.withType(JavaCompile) {
